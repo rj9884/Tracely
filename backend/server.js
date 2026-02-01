@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { connectDB } from './src/utils/db.js'
+import { authMiddleware } from './src/middleware/auth.js'
 import eventRoutes from './src/routes/events.js'
 import siteRoutes from './src/routes/sites.js'
 import trackerRoutes from './src/routes/trackers.js'
@@ -18,6 +19,9 @@ app.use(cors({
   credentials: true,
 }))
 app.use(express.json())
+
+// Auth middleware (applies to all routes)
+app.use(authMiddleware)
 
 // Connect to MongoDB
 connectDB()
