@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react'
 import { privacyAPI } from '../utils/api'
 
-export const useSites = (globalMode = false) => {
+export const useSites = (startWithGlobal = false) => {
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [mode, setMode] = useState(globalMode ? 'global' : 'personal')
+  const [mode, setMode] = useState(startWithGlobal ? 'global' : 'personal')
+
+  useEffect(() => {
+    // Update mode when startWithGlobal changes (e.g., when user logs in/out)
+    setMode(startWithGlobal ? 'global' : 'personal')
+  }, [startWithGlobal])
 
   useEffect(() => {
     const fetchSites = async (isInitial = false) => {
