@@ -34,6 +34,18 @@ app.use('/api/trackers', trackerRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/auth', authRoutes)
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'Tracely Backend API', version: '1.0.0', endpoints: {
+    health: '/api/health',
+    auth: '/api/auth',
+    events: '/api/events',
+    sites: '/api/sites',
+    trackers: '/api/trackers',
+    analytics: '/api/analytics'
+  }})
+})
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Tracely Backend is running' })

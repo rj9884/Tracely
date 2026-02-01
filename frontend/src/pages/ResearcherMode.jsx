@@ -12,7 +12,7 @@ export default function ResearcherMode() {
   const [evidenceLoading, setEvidenceLoading] = useState(false)
   const [snapshot, setSnapshot] = useState(null)
   const [snapshotTime, setSnapshotTime] = useState(null)
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+  const apiBase = import.meta.env.VITE_API_URL || 'https://tracely-backend-tn5u.onrender.com/api'
 
   const fetchEvidence = async () => {
     if (!domain) return
