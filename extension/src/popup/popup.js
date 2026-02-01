@@ -1,7 +1,7 @@
 // Popup script to display current site privacy score
 let currentDomain = ''
 let storageListener = null
-const BACKEND_URL = 'http://localhost:3000/api'
+const BACKEND_URL = 'https://tracely-backend.onrender.com/api'
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -209,7 +209,7 @@ function displaySiteScore(siteData) {
     viewDetailsBtn.style.display = 'block'
     viewDetailsBtn.onclick = () => {
       chrome.tabs.create({
-        url: `http://localhost:5173/site/${currentDomain}`,
+        url: `https://tracely-pi.vercel.app/site/${currentDomain}`,
       })
     }
   }
@@ -220,7 +220,7 @@ const settingsBtn = document.getElementById('settingsBtn')
 if (settingsBtn) {
   settingsBtn.addEventListener('click', () => {
     chrome.tabs.create({
-      url: 'http://localhost:5173',
+      url: 'https://tracely-pi.vercel.app',
     })
   })
 }
