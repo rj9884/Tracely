@@ -25,7 +25,8 @@ Tracely is an extension-based browser platform for investigating third-party tra
 - Quick overview of tracker ecosystem
 - Risk trends over time
 - Multi-site comparison
-- **Hybrid Data Mode** - Toggle between "My Data" (personal observations) and "Global Stats" (aggregated insights)
+- **User Authentication** - Login to save personal tracking data or view global aggregated insights
+- **Hybrid Data Mode** - Authenticated users see personal data; non-authenticated users see global stats
 - Search, filter, and sort capabilities
 
 ### 📊 Analytics Page
@@ -54,41 +55,42 @@ Tracely is an extension-based browser platform for investigating third-party tra
 - Real-time event logging
 - Privacy-first (no content capture, no identifiers)
 - Seamless data sync to dashboard
+- Auto-syncs authentication tokens for personalized tracking
+Authentication & Data Management
 
-## Hybrid Data Mode
+Tracely supports **user authentication** to provide personalized tracking data while maintaining global insights for non-authenticated users.
 
-Tracely supports a **hybrid approach** so users can view both personal observations and aggregated global insights.
+### Authentication Features
+- **JWT-based authentication** - Secure token-based login/registration
+- **Extension sync** - Tokens automatically sync between web app and browser extension
+- **Personal data isolation** - Each user's tracking data is stored separately with their userId
+- **Global aggregation** - Non-authenticated users see cumulative data from all users
 
 ### How It Works
-- **Personal Data**: Trackers detected during your own browsing
-- **Global Stats**: Aggregated tracking data from all users (no individual identity or browsing history)
-
-### User Experience
-- **My Data** (default): shows only your detected trackers and sites
-- **Global Stats**: shows anonymized, aggregated patterns across all users
-- Toggle modes directly on the Dashboard
+- **Logged In**: See only your personal tracking data and observations
+- **Logged Out**: See aggregated global statistics from all users combined
+- **Extension Integration**: Login once in the web app, and the extension automatically uses your credentials
 
 ### API Behavior
-- Personal data (requires auth):
-	- `GET /sites`
-	- `GET /site/:domain/details`
-	- `GET /site/:domain/evidence`
-- Global data (no auth):
-	- `GET /sites/global/stats`
-
+- Personal data (requires authentication):
+  - `GET /sites` - Your tracked sites only
+  - `GET /site/:domain/details` - Your data for a specific domain
+  - `GET /site/:domain/evidence` - Your evidence timeline
+  - `POST /events` - Creates events linked to your userId
+- Global data (no authentication required):
+  - `GET /sites/global/stats` - Aggregated data from all users
+  
 ### Data Privacy
-- User identities are never exposed
-- Personal browsing habits remain private
-- Global stats are aggregate-only
+- Each user's tracking data is isolated by userId in the database
+- Global statistics are truly anonymous aggregates
+- No user identities or browsing histories are exposed in global view
+- Extension token storage uses secure chrome.storage.local API
 
-### Implementation Notes
-- Models include `userId` on events and sites
-- Queries are indexed by `(userId, domain)` for performance
-- If not authenticated, the system defaults to global stats
-
-### Future Enhancements
-- Per-tracker global analytics and correlations
-- Time-series trends and risk heatmaps
+### Implementation
+- JWT tokens stored in localStorage (web) and chrome.storage.local (extension)
+- Authorization header automatically included in all authenticated requests
+- Middleware validates tokens and sets req.userId for data filtering
+- Database models include optional userId field (null for legacy/global data)
 - Researcher dashboards with exportable global reports
 
 ## Quick Start
@@ -119,21 +121,22 @@ Then visit `http://localhost:5173`
 ```
 frontend/          React + Vite UI
 ├── pages/         Dashboard, Site Detail, Analytics, Researcher Mode
-├── components/    Reusable UI components (Charts, TrackerList, SiteCard, etc.)
+├── components/    Reusable UI components (Layout, AuthModal, Charts, TrackerList, etc.)
+├── contexts/      AuthContext for authentication state management
 ├── hooks/         Custom data-fetching hooks (useApi, useSites, useTrackers)
 └── utils/         API client
 
 backend/           Express.js API + MongoDB
 ├── routes/        API endpoints (sites, trackers, events, analytics, auth)
 ├── models/        Mongoose schemas (Site, Tracker, Event, User)
-├── middleware/    Auth, validation
+├── middleware/    Auth middleware (JWT validation)
 └── utils/         Helpers, database utilities
 
 extension/         Chrome extension
-├── background/    Service worker (message passing)
-├── content/       Content script (XHR/Fetch interception)
+├── background/    Service worker (message passing, token management)
+├── content/       Content script (XHR/Fetch interception, token sync)
 ├── popup/         UI for extension popup
-└── utils/         Shared utilities
+└── utils/         Auth utilities, shared utilities
 ```
 
 ## Core Workflows
@@ -178,25 +181,26 @@ All data stays in your browser extension and local database. No cloud sync.
 
 ## Technical Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Recharts (data visualization), Lucide React (icons)
-- **Backend**: Node.js, Express.js, Mongoose
-- **Database**: MongoDB (with hybrid user/global data support)
-- **Extension**: Chrome/Chromium (Manifest v3)
-- **Auth**: Session-based (optional for personal data tracking)
+- **Frontend**: React 18, Vite, Tailwind CSS, React Router v7, Recharts (data visualization), Lucide React (icons)
+- **Backend**: Node.js, Express.js, Mongoose, JWT authentication, bcrypt
+- **Database**: MongoDB (with userId-based data isolation and global aggregation)
+- **Extension**: Chrome/Chromium (Manifest v3) with token sync via postMessage
+- **Auth**: JWT tokens with automatic extension synchronization
 
 ## Project Status
 
 This is a **complete, functional MVP** ready for production use:
 - ✅ Real tracker detection with categorization
+- ✅ User authentication with JWT tokens
+- ✅ Personal data isolation per user
+- ✅ Global aggregated statistics for non-authenticated users
+- ✅ Extension token synchronization
 - ✅ Evidence-based reporting with full methodology
 - ✅ Reproducible analysis with snapshots
 - ✅ Audit-ready exports (JSON, CSV)
 - ✅ Full methodology disclosure
-- ✅ Hybrid data mode (personal + global statistics)
 - ✅ Interactive data visualizations
-- ✅ Professional UI with accented design
-
-## Documentation
+- ✅ Professional UI with accented design with authentication guide
 
 - **[QUICKSTART.md](QUICKSTART.md)** - Setup and first steps
 - **[docs/DEMO.md](docs/DEMO.md)** - Interactive demo walkthrough
