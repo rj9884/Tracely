@@ -1,5 +1,5 @@
 window.addEventListener('message', (event) => {
-  if (event.origin !== 'http://localhost:5173') {
+  if (event.origin !== 'https://tracely-frontend.vercel.app') {
     return
   }
 

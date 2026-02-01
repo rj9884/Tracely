@@ -6,6 +6,16 @@
 
 Tracely is an extension-based browser platform for investigating third-party tracking across websites. Designed for regulators, researchers, journalists, and compliance teams—it transforms raw tracker detections into traceable, reproducible evidence.
 
+## 🚀 Live Demo
+
+**[Try Tracely Now →](https://tracely-frontend.vercel.app/)**
+
+- **Dashboard**: [https://tracely-frontend.vercel.app/](https://tracely-frontend.vercel.app/)
+- **Backend API**: [https://tracely-backend-tn5u.onrender.com](https://tracely-backend-tn5u.onrender.com)
+- **Extension**: Download from [Chrome Web Store](#) (coming soon) or load unpacked from source
+
+> **Note**: The free-tier backend may take 30-60 seconds to wake up on first request.
+
 ## What It Does
 
 ### For Privacy Professionals

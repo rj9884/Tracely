@@ -32,7 +32,7 @@
       "all_frames": true
     },
     {
-      "matches": ["http://localhost:5173/*", "http://localhost:3000/*"],
+      "matches": ["https://tracely-frontend.vercel.app/*"],
       "js": ["src/content/token-sync.js"],
       "run_at": "document_start"
     }
