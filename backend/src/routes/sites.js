@@ -210,18 +210,17 @@ router.get('/debug/all', async (req, res) => {
   }
 })
 
-// GET /sites - User's own sites, or all sites if unauthenticated
+// GET /sites - User's own sites
 router.get('/', async (req, res) => {
   try {
     const userId = req.userId // May be undefined if not authenticated
     
-    // If userId exists, show user's sites + global sites (userId is null)
-    // If no userId, show all sites
-    const query = userId 
-      ? { $or: [{ userId }, { userId: null }] }
-      : {}
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to view personal sites' })
+    }
     
-    const sites = await Site.find(query)
+    // Only show user's own sites
+    const sites = await Site.find({ userId })
       .sort({ score: -1 })
       .limit(50)
 
@@ -236,15 +235,18 @@ router.get('/', async (req, res) => {
         thirdPartyCount: site.thirdPartyCount,
         lastScanned: site.lastScanned,
       })),
+      mode: 'personal',
     })
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch sites' })
   }
 })
 
-// GET /sites/global - Aggregated stats from all users
+// GET /sites/global/stats - Aggregated stats from all users (public data)
 router.get('/global/stats', async (req, res) => {
   try {
+    // Get ALL sites (both user-specific and global aggregate)
+    // For now, combine all data as global
     const sites = await Site.find()
       .sort({ trackerCount: -1 })
       .limit(50)

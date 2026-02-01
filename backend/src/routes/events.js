@@ -12,8 +12,9 @@ const router = express.Router()
 router.post('/', async (req, res) => {
   try {
     const { domain, requestUrl, trackerDomain, metadata } = req.body
+    const userId = req.userId // From auth middleware (optional)
 
-    console.log('[Events API] Received tracker report:', { domain, trackerDomain, requestUrl })
+    console.log('[Events API] Received tracker report:', { domain, trackerDomain, requestUrl, userId })
 
     if (!domain) {
       console.error('[Events API] Missing domain in request body')
@@ -24,8 +25,9 @@ router.post('/', async (req, res) => {
     const trackerInfo = getTrackerInfo(trackerDomain)
     const isThirdPartyRequest = isThirdParty(trackerDomain, domain)
 
-    // Create event
+    // Create event (with userId if authenticated)
     const event = new Event({
+      userId: userId || null,
       domain: domain.toLowerCase(),
       requestUrl,
       trackerDomain: trackerDomain.toLowerCase(),
@@ -39,8 +41,12 @@ router.post('/', async (req, res) => {
 
     await event.save()
 
-    // Update site counts
-    const events = await Event.find({ domain: domain.toLowerCase() })
+    // Update site counts - filter by userId if authenticated
+    const eventQuery = userId 
+      ? { domain: domain.toLowerCase(), userId }
+      : { domain: domain.toLowerCase(), userId: null }
+    
+    const events = await Event.find(eventQuery)
     let trackerCount = 0
     let thirdPartyCount = 0
     let cookieCount = 0
@@ -58,16 +64,20 @@ router.post('/', async (req, res) => {
     const uniqueTrackerCount = Math.max(uniqueTrackerDomains.size, trackerCount > 0 ? 1 : 0)
     const score = calculatePrivacyScore(trackerCount, thirdPartyCount, cookieCount)
     
-    console.log(`[Events API] Updated ${domain.toLowerCase()}: score=${score}, trackers=${trackerCount}, 3rdParty=${thirdPartyCount}`)
+    console.log(`[Events API] Updated ${domain.toLowerCase()}: score=${score}, trackers=${trackerCount}, 3rdParty=${thirdPartyCount}, userId=${userId}`)
     
     // Set risk level (adjusted for new scoring scale: 0-30 Low, 31-60 Medium, 61-80 High, 81-100 Critical)
     let riskLevel = 'low'
     if (score >= 81) riskLevel = 'high'
     else if (score >= 61) riskLevel = 'medium'
 
-    // Upsert site (update or create)
+    // Upsert site (update or create) - separate site per user
+    const siteQuery = userId
+      ? { domain: domain.toLowerCase(), userId }
+      : { domain: domain.toLowerCase(), userId: null }
+    
     const site = await Site.findOneAndUpdate(
-      { domain: domain.toLowerCase() },
+      siteQuery,
       {
         $set: {
           trackerCount,
@@ -81,6 +91,7 @@ router.post('/', async (req, res) => {
         $inc: { scanCount: 1 },
         $setOnInsert: {
           domain: domain.toLowerCase(),
+          userId: userId || null,
           createdAt: new Date(),
         }
       },

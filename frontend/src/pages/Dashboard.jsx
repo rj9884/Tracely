@@ -4,9 +4,12 @@ import { Search, BarChart3, TrendingUp, Globe } from 'lucide-react'
 import SiteCard from '../components/SiteCard'
 import PrivacyScore from '../components/PrivacyScore'
 import { useSites } from '../hooks/useApi'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Dashboard() {
-  const { sites, loading, mode, toggleMode } = useSites()
+  const { isAuthenticated } = useAuth()
+  // When authenticated, show personal data. When not, show global data
+  const { sites, loading, mode, toggleMode } = useSites(!isAuthenticated)
   const [filteredSites, setFilteredSites] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('score')
@@ -113,18 +116,20 @@ export default function Dashboard() {
           <option value="name">Sort by Name</option>
         </select>
         
-        {/* Data Mode Toggle */}
-        <button
-          onClick={toggleMode}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all border-2 ${
-            mode === 'personal'
-              ? 'bg-privacy-600 text-black border-privacy-600 hover:bg-privacy-700'
-              : 'bg-white text-privacy-600 border-privacy-600 hover:bg-privacy-50'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          {mode === 'personal' ? 'My Data' : 'Global Stats'}
-        </button>
+        {/* Data Mode Toggle - Only show when authenticated */}
+        {isAuthenticated && (
+          <button
+            onClick={toggleMode}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all border-2 ${
+              mode === 'personal'
+                ? 'bg-privacy-600 text-white border-privacy-600 hover:bg-privacy-700'
+                : 'bg-white text-privacy-600 border-privacy-600 hover:bg-privacy-50'
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            {mode === 'personal' ? 'My Data' : 'Global Stats'}
+          </button>
+        )}
       </div>
 
       {/* Sites Grid */}
