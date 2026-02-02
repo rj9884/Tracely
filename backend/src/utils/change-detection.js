@@ -1,12 +1,4 @@
 /**
- * Behavioral Change Detection & History Tracking
- * 
- * This is the KILLER FEATURE that differentiates us from Brave/uBlock.
- * Brave: stateless, no memory
- * Us: full behavioral history with change detection
- */
-
-/**
  * Record a score snapshot and detect behavioral changes
  * @param {Object} site - Mongoose Site document
  * @param {Array} currentTrackers - Array of current tracker domains
