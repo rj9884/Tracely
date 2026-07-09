@@ -226,17 +226,5 @@ Excluded Data:
 
 All data stays in your browser extension and local database. No cloud sync.
 
-## Project Status
-
-This is a complete, functional MVP ready for production use:
-- Real tracker detection with categorization
-- Evidence-based reporting with full methodology
-- Reproducible analysis with snapshots
-- Audit-ready exports (JSON, CSV)
-- Full methodology disclosure
-- Hybrid data mode (personal + global statistics)
-- Interactive data visualizations
-- Professional UI with accented design
-
 ## License
 MIT
