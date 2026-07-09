@@ -7,8 +7,8 @@ This report evaluates the accuracy of Tracely's privacy detection engine on real
 * **Optimized Filtered Model (Whitelists & Blocklists)**: By whitelisting safe CDNs/utilities and applying an expanded blocklist and keyword filter, the **False Positive Rate drops to 0.0%** while retaining a **66.7% True Positive Rate**.
 * **Narrow Model**: Restricting classification strictly to categorized domains inside the static \`KNOWN_TRACKERS\` dictionary has a **0% FPR** but misses novel trackers, yielding a **66.7% TPR**.
 * **Backend Ingestion Throughput**:
-  * **V8 Logic Limit**: Up to **96573 events/sec** in-memory.
-  * **Database Bottleneck**: Throughput reaches **40 events/sec** under Simulated Database (In-Memory Mock). This represents a massive performance boost achieved by replacing heavy group aggregations with indexed atomic increments.
+  * **V8 Logic Limit**: Up to **118005 events/sec** in-memory.
+  * **Database Bottleneck**: Throughput reaches **2 events/sec** under Real Database (MongoDB - Optimized $inc). This represents a massive performance boost achieved by replacing heavy group aggregations with indexed atomic increments.
 
 ---
 
@@ -73,8 +73,8 @@ We optimized this in [events.js](file:///home/rajan/Coding/Tracely/backend/src/r
 
 | Benchmark Component | Ingestion Speed | Latency Condition | Bottleneck Profile |
 | :--- | :---: | :--- | :--- |
-| **JS Business Logic Execution** | **96573 events/sec** | 0 ms (in-memory) | CPU-bound (V8 Javascript Thread) |
-| **Database IO Throughput** | **40 events/sec** | 23 ms (simulated DB roundtrip) | I/O-bound (MongoDB writes & indexes) |
+| **JS Business Logic Execution** | **118005 events/sec** | 0 ms (in-memory) | CPU-bound (V8 Javascript Thread) |
+| **Database IO Throughput** | **2 events/sec** | Real Connection | I/O-bound (MongoDB writes & indexes) |
 
 ---
 

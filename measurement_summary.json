@@ -32,8 +32,8 @@
     }
   },
   "throughput": {
-    "logicTps": "96573",
-    "dbTps": "40",
-    "mode": "Simulated Database (In-Memory Mock)"
+    "logicTps": "118005",
+    "dbTps": "2",
+    "mode": "Real Database (MongoDB - Optimized $inc)"
   }
 }
