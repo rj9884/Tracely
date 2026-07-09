@@ -173,6 +173,13 @@ The benchmark suite evaluates:
 
 The results are automatically compiled into a markdown table inside `MEASUREMENT_REPORT.md` at the project root.
 
+---
+<img width="1410" height="1640" alt="01-telemetry" src="https://github.com/user-attachments/assets/9e14fbf1-6b97-4d7a-8a8b-f969c4061dc1" />
+
+<img width="1396" height="1684" alt="02-telemetry" src="https://github.com/user-attachments/assets/998d255d-f3b5-4a0a-bb70-a0548a803bc4" />
+
+---
+
 ### Benchmark Notes & Variance
 * **Throughput Variance**: Measured throughput numbers (events/sec) can vary depending on host system CPU performance, transient resource load, and Node.js garbage collection cycles during the run.
 * **Accuracy Constraints**: The accuracy benchmark crawls homepage HTML. Because many trackers load dynamically post-consent and some sites block static scrapers (yielding 403 errors), the exact ratio of trackers to CDNs will depend on active network conditions and page states.
@@ -232,4 +239,4 @@ This is a complete, functional MVP ready for production use:
 - Professional UI with accented design
 
 ## License
-ISC
+MIT
