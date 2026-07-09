@@ -22,11 +22,20 @@ router.post('/', async (req, res) => {
     const trackerInfo = getTrackerInfo(trackerDomain)
     const isThirdPartyRequest = isThirdParty(trackerDomain, domain)
 
+    // Optimization: Check if this tracker is new for this site using indexed Event.exists BEFORE saving
+    const isNewTrackerForSite = !(await Event.exists({
+      domain: domain.toLowerCase(),
+      trackerDomain: trackerDomain.toLowerCase()
+    }))
+
+    // Fix schema bug: Map 'type' from trackerInfo to 'trackerType'
     const event = new Event({
       domain: domain.toLowerCase(),
       requestUrl,
       trackerDomain: trackerDomain.toLowerCase(),
-      ...trackerInfo,
+      category: trackerInfo.category,
+      trackerType: trackerInfo.type, // Map 'type' from trackerInfo to 'trackerType'
+      risk: trackerInfo.risk,
       metadata: {
         ...metadata,
         isThirdParty: isThirdPartyRequest,
@@ -36,81 +45,14 @@ router.post('/', async (req, res) => {
 
     await event.save()
 
-    // Update site counts using aggregation (memory-efficient)
-    const aggregationResult = await Event.aggregate([
-      { $match: { domain: domain.toLowerCase() } },
-      {
-        $group: {
-          _id: null,
-          trackerCount: { $sum: 1 },
-          uniqueTrackerCount: { $addToSet: '$trackerDomain' },
-          thirdPartyCount: { $sum: { $cond: ['$metadata.isThirdParty', 1, 0] } },
-          cookieCount: { $sum: { $cond: [{ $eq: ['$trackerType', 'cookie'] }, 1, 0] } },
-        },
-      },
-    ])
-
-    const aggregated = aggregationResult[0] || { trackerCount: 0, uniqueTrackerCount: [], thirdPartyCount: 0, cookieCount: 0 }
-    const trackerCount = aggregated.trackerCount
-    const thirdPartyCount = aggregated.thirdPartyCount
-    const cookieCount = aggregated.cookieCount
-    const uniqueTrackerDomains = new Set(aggregated.uniqueTrackerCount || [])
-    
-    const uniqueTrackerCount = Math.max(uniqueTrackerDomains.size, trackerCount > 0 ? 1 : 0)
-    const score = calculatePrivacyScore(trackerCount, thirdPartyCount, cookieCount)
-    
-    console.log(`[Events API] Updated ${domain.toLowerCase()}: score=${score}, trackers=${trackerCount}, 3rdParty=${thirdPartyCount}`)
-    
-   
-    let riskLevel = 'low'
-    if (score >= 81) riskLevel = 'high'
-    else if (score >= 61) riskLevel = 'medium'
-
-    const site = await Site.findOneAndUpdate(
-      { domain: domain.toLowerCase() },
-      {
-        $set: {
-          trackerCount,
-          uniqueTrackerCount,
-          thirdPartyCount,
-          cookieCount,
-          score,
-          riskLevel,
-          lastScanned: new Date(),
-        },
-        $inc: { scanCount: 1 },
-        $setOnInsert: {
-          domain: domain.toLowerCase(),
-          createdAt: new Date(),
-        }
-      },
-      { upsert: true, new: true }
-    )
-
-    const currentTrackerDomains = [...uniqueTrackerDomains]
-    const { snapshot, changeDetection } = recordScoreSnapshot(site, currentTrackerDomains)
-    
-    await Site.updateOne(
-      { _id: site._id },
-      {
-        $push: {
-          scoreHistory: {
-            $each: [snapshot],
-            $slice: -30,
-          },
-        },
-      }
-    )
-    
-    if (changeDetection.hasChanges) {
-      console.log(`[Change Detection] ${domain}: ${changeDetection.changeDescription}`)
-    }
-
-    await Tracker.findOneAndUpdate(
+    // Get Tracker object to link its ObjectId to the Site
+    const tracker = await Tracker.findOneAndUpdate(
       { domain: trackerDomain.toLowerCase() },
       {
         $set: {
-          ...trackerInfo,
+          category: trackerInfo.category,
+          type: trackerInfo.type,
+          risk: trackerInfo.risk,
         },
         $inc: { sightingCount: 1 },
         $setOnInsert: {
@@ -121,9 +63,71 @@ router.post('/', async (req, res) => {
       { upsert: true, new: true }
     )
 
+    // Optimization: Perform update with $inc, avoiding the heavy Event.aggregate query
+    const updateQuery = {
+      $inc: {
+        trackerCount: 1,
+        scanCount: 1,
+        thirdPartyCount: isThirdPartyRequest ? 1 : 0,
+        cookieCount: trackerInfo.type === 'cookie' ? 1 : 0,
+        uniqueTrackerCount: isNewTrackerForSite ? 1 : 0
+      },
+      $set: {
+        lastScanned: new Date(),
+      },
+      $setOnInsert: {
+        domain: domain.toLowerCase(),
+        createdAt: new Date(),
+      }
+    }
+
+    // Add tracker ObjectId to trackers array if it's new
+    if (isNewTrackerForSite) {
+      updateQuery.$addToSet = { trackers: tracker._id }
+    }
+
+    // Update site metrics using atomic increment
+    const site = await Site.findOneAndUpdate(
+      { domain: domain.toLowerCase() },
+      updateQuery,
+      { upsert: true, new: true }
+    )
+
+    // Calculate privacy score based on updated counts
+    const score = calculatePrivacyScore(site.trackerCount, site.thirdPartyCount, site.cookieCount)
+    let riskLevel = 'low'
+    if (score >= 81) riskLevel = 'high'
+    else if (score >= 61) riskLevel = 'medium'
+
+    // Update score and riskLevel on the site doc
+    site.score = score
+    site.riskLevel = riskLevel
+
+    // Retrieve unique tracker domains to detect history changes
+    const currentTrackerDomains = await Event.distinct('trackerDomain', { domain: domain.toLowerCase() })
+    const { snapshot, changeDetection } = recordScoreSnapshot(site, currentTrackerDomains)
+
+    // Save final score and push scoreHistory
+    await Site.updateOne(
+      { _id: site._id },
+      {
+        $set: { score, riskLevel },
+        $push: {
+          scoreHistory: {
+            $each: [snapshot],
+            $slice: -30,
+          },
+        },
+      }
+    )
+
+    if (changeDetection.hasChanges) {
+      console.log(`[Change Detection] ${domain}: ${changeDetection.changeDescription}`)
+    }
+
     res.status(201).json({
       success: true,
-      data: { 
+      data: {
         event,
         changeDetection: changeDetection.hasChanges ? changeDetection : undefined,
       },

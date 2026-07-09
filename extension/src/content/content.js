@@ -5,16 +5,80 @@
 const KNOWN_TRACKERS = {
   'google-analytics.com': { category: 'analytics', type: 'script', risk: 'low' },
   'analytics.google.com': { category: 'analytics', type: 'api_call', risk: 'low' },
+  'googletagmanager.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'googletagservices.com': { category: 'advertising', type: 'script', risk: 'low' },
+  'googleadservices.com': { category: 'advertising', type: 'script', risk: 'low' },
+  'doubleclick.net': { category: 'advertising', type: 'script', risk: 'high' },
   'facebook.com': { category: 'advertising', type: 'pixel', risk: 'high' },
+  'facebook.net': { category: 'advertising', type: 'pixel', risk: 'high' },
   'facebook-pixel.com': { category: 'tracking', type: 'pixel', risk: 'high' },
   'twitter.com': { category: 'social', type: 'script', risk: 'medium' },
-  'doubleclick.net': { category: 'advertising', type: 'script', risk: 'high' },
-  'cdn.facebook.com': { category: 'tracking', type: 'request', risk: 'high' },
+  'twitter-pixel.com': { category: 'tracking', type: 'pixel', risk: 'medium' },
   'linkedin.com': { category: 'social', type: 'script', risk: 'medium' },
+  'linkedin-insight.com': { category: 'tracking', type: 'pixel', risk: 'medium' },
+  'licdn.com': { category: 'social', type: 'script', risk: 'medium' },
+  'snapchat.com': { category: 'social', type: 'script', risk: 'medium' },
   'tiktok.com': { category: 'social', type: 'script', risk: 'medium' },
   'pinterest.com': { category: 'social', type: 'script', risk: 'medium' },
+  'adnxs.com': { category: 'advertising', type: 'script', risk: 'high' },
   'amazon-adsystem.com': { category: 'advertising', type: 'script', risk: 'medium' },
+  'scorecardresearch.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'hotjar.com': { category: 'analytics', type: 'script', risk: 'medium' },
+  'mixpanel.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'amplitude.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'segment.com': { category: 'analytics', type: 'script', risk: 'medium' },
+  'segment.io': { category: 'analytics', type: 'script', risk: 'medium' },
+  'crazyegg.com': { category: 'analytics', type: 'script', risk: 'medium' },
+  'optimizely.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'quantserve.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'criteo.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'criteo.js': { category: 'advertising', type: 'script', risk: 'high' },
+  'bluekai.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'rubiconproject.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'pubmatic.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'openx.net': { category: 'advertising', type: 'script', risk: 'high' },
+  'casalemedia.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'yieldlab.net': { category: 'advertising', type: 'script', risk: 'medium' },
+  'outbrain.com': { category: 'advertising', type: 'script', risk: 'medium' },
+  'taboola.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'indexww.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'smartadserver.com': { category: 'advertising', type: 'script', risk: 'medium' },
+  'adtech.de': { category: 'advertising', type: 'script', risk: 'high' },
+  'advertising.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'bidswitch.net': { category: 'advertising', type: 'script', risk: 'high' },
+  'mathtag.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'conviva.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'chartbeat.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'demdex.net': { category: 'tracking', type: 'script', risk: 'high' },
+  'krxd.net': { category: 'tracking', type: 'script', risk: 'high' },
+  'omtrdc.net': { category: 'analytics', type: 'script', risk: 'medium' },
+  'adroll.com': { category: 'advertising', type: 'script', risk: 'high' },
+  'sentry.io': { category: 'analytics', type: 'script', risk: 'low' },
+  'newrelic.com': { category: 'analytics', type: 'script', risk: 'low' },
+  'intercom.io': { category: 'data', type: 'script', risk: 'medium' },
+  'zendesk.com': { category: 'data', type: 'script', risk: 'low' },
 }
+
+const KNOWN_CDNS = [
+  'cdnjs.cloudflare.com',
+  'cdn.jsdelivr.net',
+  'unpkg.com',
+  'googleapis.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
+  'ajax.googleapis.com',
+  'code.jquery.com',
+  'bootstrapcdn.com',
+  'stackpath.bootstrapcdn.com',
+  'use.fontawesome.com',
+  'wp.com',
+  'githubassets.com',
+  'stripe.com',
+  'js.stripe.com',
+  'paypal.com',
+  'paypalobjects.com',
+  'recaptcha.net'
+]
 
 function isThirdParty(requestDomain, pageDomain) {
   const normalizeeDomain = (domain) => {
@@ -43,6 +107,38 @@ function getTrackerInfo(domain) {
   return { category: 'other', type: 'other', risk: 'low' }
 }
 
+function isTracker(domain, url = '') {
+  const normalized = domain.toLowerCase()
+  
+  // 1. Check if it's a known safe CDN/utility
+  for (const cdn of KNOWN_CDNS) {
+    if (normalized === cdn || normalized.endsWith('.' + cdn)) {
+      return false
+    }
+  }
+  
+  // 2. Check if it's in the tracker blocklist
+  for (const tracker of Object.keys(KNOWN_TRACKERS)) {
+    if (normalized.includes(tracker) || tracker.includes(normalized)) {
+      return true
+    }
+  }
+
+  // 3. Fallback: Check if URL contains common tracking path keywords
+  const lowercaseUrl = url.toLowerCase()
+  const trackingKeywords = [
+    '/ads/', '/ad/', 'analytics', 'pixel', 'tracker', 'tracking', 'telemetry', 
+    'beacon', 'marketing', 'retargeting', 'visitor', 'metrics', 'doubleclick'
+  ]
+  for (const keyword of trackingKeywords) {
+    if (lowercaseUrl.includes(keyword)) {
+      return true
+    }
+  }
+
+  return false
+}
+
 // Detect script injections
 function detectScripts() {
   const scripts = document.querySelectorAll('script[src]')
@@ -54,15 +150,17 @@ function detectScripts() {
 
       const pageDomain = window.location.hostname
       if (isThirdParty(domain, pageDomain)) {
-        const trackerInfo = getTrackerInfo(domain)
-        reportTracker({
-          url: src,
-          trackerDomain: domain,
-          category: trackerInfo.category,
-          type: 'script',
-          isThirdParty: true,
-          ...trackerInfo,
-        })
+        if (isTracker(domain, src)) {
+          const trackerInfo = getTrackerInfo(domain)
+          reportTracker({
+            url: src,
+            trackerDomain: domain,
+            category: trackerInfo.category,
+            type: 'script',
+            isThirdParty: true,
+            ...trackerInfo,
+          })
+        }
       }
     } catch (err) {
       console.log('Error parsing script URL:', src, err)
@@ -82,15 +180,17 @@ function detectPixels() {
 
         const pageDomain = window.location.hostname
         if (isThirdParty(domain, pageDomain)) {
-          const trackerInfo = getTrackerInfo(domain)
-          reportTracker({
-            url: src,
-            trackerDomain: domain,
-            category: trackerInfo.category,
-            type: 'pixel',
-            isThirdParty: true,
-            ...trackerInfo,
-          })
+          if (isTracker(domain, src)) {
+            const trackerInfo = getTrackerInfo(domain)
+            reportTracker({
+              url: src,
+              trackerDomain: domain,
+              category: trackerInfo.category,
+              type: 'pixel',
+              isThirdParty: true,
+              ...trackerInfo,
+            })
+          }
         }
       } catch (err) {
         console.log('Error parsing pixel URL:', src, err)

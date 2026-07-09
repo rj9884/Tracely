@@ -37,5 +37,6 @@ const eventSchema = new mongoose.Schema(
 eventSchema.index({ userId: 1, domain: 1, createdAt: -1 })
 eventSchema.index({ domain: 1, createdAt: -1 })
 eventSchema.index({ trackerDomain: 1, createdAt: -1 })
+eventSchema.index({ domain: 1, trackerDomain: 1 })
 
 export const Event = mongoose.model('Event', eventSchema)

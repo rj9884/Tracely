@@ -1,0 +1,39 @@
+{
+  "classifier": {
+    "broad": {
+      "tpr": "100.0",
+      "fpr": "100.0",
+      "precision": "3.9",
+      "accuracy": "3.9",
+      "tp": 3,
+      "fp": 74,
+      "fn": 0,
+      "tn": 0
+    },
+    "filtered": {
+      "tpr": "66.7",
+      "fpr": "0.0",
+      "precision": "100.0",
+      "accuracy": "98.7",
+      "tp": 2,
+      "fp": 0,
+      "fn": 1,
+      "tn": 74
+    },
+    "narrow": {
+      "tpr": "66.7",
+      "fpr": "0.0",
+      "precision": "100.0",
+      "accuracy": "98.7",
+      "tp": 2,
+      "fp": 0,
+      "fn": 1,
+      "tn": 74
+    }
+  },
+  "throughput": {
+    "logicTps": "96573",
+    "dbTps": "40",
+    "mode": "Simulated Database (In-Memory Mock)"
+  }
+}
